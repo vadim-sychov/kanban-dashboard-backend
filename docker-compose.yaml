@@ -3,18 +3,31 @@ version: '3.7'
 services:
   nginx:
     build: ./docker/nginx
+    volumes:
+      - ./:/backend
     ports:
       - 80:80
+    networks:
+      main:
 
   php:
     build: ./docker/php
     volumes:
-      - ./:/php:cached
+      - ./:/backend
+    ports:
+      - 9000:9000
+    networks:
+      main:
 
   pgsql:
     build: ./docker/pgsql
     restart: always
     ports:
-      - 5432:5432
+      - 127.0.0.1:5434:5432
     volumes:
       - ./docker/pgsql/pgdata:/var/lib/postgresql/data
+    networks:
+      main:
+
+networks:
+  main:
