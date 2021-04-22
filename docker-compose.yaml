@@ -21,7 +21,6 @@ services:
 
   pgsql:
     build: ./docker/pgsql
-    restart: always
     ports:
       - 127.0.0.1:5434:5432
     volumes:
