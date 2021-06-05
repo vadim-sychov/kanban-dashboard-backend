@@ -4,9 +4,10 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Entity\Task;
-use App\Form\TaskType;
-use App\Module\EntityTransformer\TaskArrayTransformer;
-use App\Repository\TaskRepository;
+use App\Entity\TaskComment;
+use App\Form\CommentType;
+use App\Module\EntityTransformer\CommentArrayTransformer;
+use App\Repository\TaskCommentRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,14 +17,14 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\Security\Core\User\UserInterface;
 
 /**
- * @Route("/api/task", name="api_task")
+ * @Route("/api/task/{taskId}/comment", name="api_task_comment")
  */
-class TaskController extends AbstractController
+class TaskCommentController extends AbstractController
 {
-    private TaskArrayTransformer $transformer;
+    private CommentArrayTransformer $transformer;
     private EntityManagerInterface $entityManager;
 
-    public function __construct(TaskArrayTransformer $transformer, EntityManagerInterface $entityManager)
+    public function __construct(CommentArrayTransformer $transformer, EntityManagerInterface $entityManager)
     {
         $this->transformer = $transformer;
         $this->entityManager = $entityManager;
@@ -32,13 +33,24 @@ class TaskController extends AbstractController
     /**
      * @Route("/", name="get_all", methods={"GET"})
      */
-    public function getAll(TaskRepository $repository): JsonResponse
+    public function getAll(TaskCommentRepository $repository, int $taskId): JsonResponse
     {
-        $tasks = $repository->findAll();
+        /** @var Task $task */
+        $task = $this->entityManager->find(Task::class, $taskId);
+
+        if (is_null($task)) {
+            return $this->json([
+                'status' => Response::HTTP_NOT_FOUND,
+                'data' => [],
+                'message' => 'Not Found',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $comments = $repository->findBy(['taskId' => $taskId]);
 
         return $this->json([
             'status' => Response::HTTP_OK,
-            'data' => $this->transformer->toArrayAll($tasks),
+            'data' => $this->transformer->toArrayAll($comments),
             'message' => 'success',
         ]);
     }
@@ -46,22 +58,34 @@ class TaskController extends AbstractController
     /**
      * @Route("/", name="create", methods={"POST"})
      */
-    public function create(Request $request, UserInterface $user): Response
+    public function create(Request $request, UserInterface $user, int $taskId): Response
     {
-        $task = new Task();
+        /** @var Task $task */
+        $task = $this->entityManager->find(Task::class, $taskId);
 
-        $form = $this->createForm(TaskType::class, $task);
+        if (is_null($task)) {
+            return $this->json([
+                'status' => Response::HTTP_NOT_FOUND,
+                'data' => [],
+                'message' => 'Not Found',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $comment = new TaskComment();
+
+        $form = $this->createForm(CommentType::class, $comment);
         $form->submit(json_decode($request->getContent(), true));
 
         if ($form->isValid()) {
-            $task->setOwnerId($user);
+            $comment->setUserId($user);
+            $comment->setTaskId($task);
 
-            $this->entityManager->persist($task);
+            $this->entityManager->persist($comment);
             $this->entityManager->flush();
 
             return $this->json([
                 'status' => Response::HTTP_CREATED,
-                'data' => $this->transformer->toArray($task),
+                'data' => $this->transformer->toArray($comment),
                 'message' => 'created',
             ]);
         }
@@ -76,9 +100,9 @@ class TaskController extends AbstractController
     }
 
     /**
-     * @Route("/{taskId}", name="get", methods={"GET"})
+     * @Route("/{commentId}", name="delete", methods={"DELETE"})
      */
-    public function read(int $taskId): Response
+    public function delete(int $taskId, int $commentId): Response
     {
         /** @var Task $task */
         $task = $this->entityManager->find(Task::class, $taskId);
@@ -91,22 +115,10 @@ class TaskController extends AbstractController
             ], Response::HTTP_NOT_FOUND);
         }
 
-        return $this->json([
-            'status' => Response::HTTP_OK,
-            'data' => $this->transformer->toArray($task),
-            'message' => '',
-        ], Response::HTTP_OK);
-    }
+        /** @var TaskComment $comment */
+        $comment = $this->entityManager->find(TaskComment::class, $commentId);
 
-    /**
-     * @Route("/{taskId}", name="edit", methods={"PUT"})
-     */
-    public function update(int $taskId, Request $request): Response
-    {
-        /** @var Task $task */
-        $task = $this->entityManager->find(Task::class, $taskId);
-
-        if (is_null($task)) {
+        if (is_null($comment)) {
             return $this->json([
                 'status' => Response::HTTP_NOT_FOUND,
                 'data' => [],
@@ -114,45 +126,7 @@ class TaskController extends AbstractController
             ], Response::HTTP_NOT_FOUND);
         }
 
-        $form = $this->createForm(TaskType::class, $task);
-        $form->submit(json_decode($request->getContent(), true));
-
-        if ($form->isValid()) {
-            $this->entityManager->flush();
-
-            return $this->json([
-                'status' => Response::HTTP_OK,
-                'data' => $this->transformer->toArray($task),
-                'message' => 'ok',
-            ]);
-        }
-
-        $errorMessage = $form->getErrors(true)->current()->getMessage();
-
-        return $this->json([
-            'status' => Response::HTTP_BAD_REQUEST,
-            'data' => $this->transformer->toArray($task),
-            'message' => $errorMessage,
-        ]);
-    }
-
-    /**
-     * @Route("/{taskId}", name="delete", methods={"DELETE"})
-     */
-    public function delete(int $taskId): Response
-    {
-        /** @var Task $task */
-        $task = $this->entityManager->find(Task::class, $taskId);
-
-        if (is_null($task)) {
-            return $this->json([
-                'status' => Response::HTTP_NOT_FOUND,
-                'data' => [],
-                'message' => 'Not Found',
-            ], Response::HTTP_NOT_FOUND);
-        }
-
-        $this->entityManager->remove($task);
+        $this->entityManager->remove($comment);
         $this->entityManager->flush();
 
         return $this->json([

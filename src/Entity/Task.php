@@ -26,20 +26,19 @@ class Task
 
     /**
      * @ORM\ManyToOne(targetEntity=TaskPriority::class)
-     * @ORM\Column(name="priority_id")
+     * @ORM\JoinColumn(name="priority_id", referencedColumnName="id")
      */
     private $priorityId;
 
     /**
      * @ORM\ManyToOne(targetEntity=TaskColumn::class)
-     * @ORM\Column(name="column_id")
+     * @ORM\JoinColumn(name="column_id", referencedColumnName="id")
      */
     private $columnId;
 
     /**
      * @ORM\ManyToOne(targetEntity=TaskSwimlane::class, inversedBy="tasks")
-     * @ORM\JoinColumn(nullable=false)
-     * @ORM\Column(name="swimlane_id")
+     * @ORM\JoinColumn(name="swimlane_id", referencedColumnName="id", nullable=false)
      */
     private $swimlaneId;
 
@@ -55,14 +54,13 @@ class Task
 
     /**
      * @ORM\ManyToOne(targetEntity=User::class)
-     * @ORM\JoinColumn(nullable=false)
-     * @ORM\Column(name="owner_id")
+     * @ORM\JoinColumn(name="owner_id", referencedColumnName="id", nullable=false)
      */
     private $ownerId;
 
     /**
      * @ORM\ManyToOne(targetEntity=User::class)
-     * @ORM\Column(name="executor_id")
+     * @ORM\JoinColumn(name="executor_id", referencedColumnName="id")
      */
     private $executorId;
 
@@ -73,7 +71,7 @@ class Task
 
     public function __construct()
     {
-        $this->priorityId = new ArrayCollection();
+        $this->setDateCreated(new \DateTimeImmutable());
         $this->taskComments = new ArrayCollection();
     }
 

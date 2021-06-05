@@ -19,15 +19,13 @@ class TaskComment
 
     /**
      * @ORM\ManyToOne(targetEntity=User::class)
-     * @ORM\JoinColumn(nullable=false)
-     * @ORM\Column(name="user_id")
+     * @ORM\JoinColumn(name="user_id", referencedColumnName="id", nullable=false)
      */
     private $userId;
 
     /**
      * @ORM\ManyToOne(targetEntity=Task::class, inversedBy="taskComments")
-     * @ORM\JoinColumn(nullable=false)
-     * @ORM\Column(name="task_id")
+     * @ORM\JoinColumn(name="task_id", referencedColumnName="id", nullable=false)
      */
     private $taskId;
 
@@ -40,6 +38,11 @@ class TaskComment
      * @ORM\Column(type="datetime_immutable")
      */
     private $dateCreated;
+
+    public function __construct()
+    {
+        $this->setDateCreated(new \DateTimeImmutable());
+    }
 
     public function getId(): ?int
     {

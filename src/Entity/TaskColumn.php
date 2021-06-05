@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\TaskColumnRepository;
 use Doctrine\ORM\Mapping as ORM;
+use App\Entity\TaskSwimlane;
 
 /**
  * @ORM\Entity(repositoryClass=TaskColumnRepository::class)
@@ -26,6 +27,13 @@ class TaskColumn
      * @ORM\Column(type="integer")
      */
     private $position;
+
+    /**
+     * @ORM\ManyToOne(targetEntity=TaskSwimlane::class, inversedBy="taskColumns")
+     * @ORM\JoinColumn(name="swimlane_id", referencedColumnName="id")
+     */
+    private $swimlaneId;
+
 
     public function getId(): ?int
     {
@@ -52,6 +60,18 @@ class TaskColumn
     public function setPosition(int $position): self
     {
         $this->position = $position;
+
+        return $this;
+    }
+
+    public function getSwimlaneId(): ?TaskSwimlane
+    {
+        return $this->swimlaneId;
+    }
+
+    public function setSwimlaneId(?TaskSwimlane $swimlaneId): self
+    {
+        $this->swimlaneId = $swimlaneId;
 
         return $this;
     }

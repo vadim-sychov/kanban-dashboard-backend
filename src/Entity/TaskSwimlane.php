@@ -24,20 +24,20 @@ class TaskSwimlane
      */
     private $name;
 
-    //TODO remove position
-    /**
-     * @ORM\Column(type="integer")
-     */
-    private $position;
-
     /**
      * @ORM\OneToMany(targetEntity=Task::class, mappedBy="swimlaneId", orphanRemoval=true)
      */
     private $tasks;
 
+    /**
+     * @ORM\OneToMany(targetEntity=TaskColumn::class, mappedBy="swimlaneId")
+     */
+    private $taskColumns;
+
     public function __construct()
     {
         $this->tasks = new ArrayCollection();
+        $this->taskColumns = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -53,18 +53,6 @@ class TaskSwimlane
     public function setName(string $name): self
     {
         $this->name = $name;
-
-        return $this;
-    }
-
-    public function getPosition(): ?int
-    {
-        return $this->position;
-    }
-
-    public function setPosition(int $position): self
-    {
-        $this->position = $position;
 
         return $this;
     }
@@ -93,6 +81,36 @@ class TaskSwimlane
             // set the owning side to null (unless already changed)
             if ($task->getSwimlaneId() === $this) {
                 $task->setSwimlaneId(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection|TaskColumn[]
+     */
+    public function getTaskColumns(): Collection
+    {
+        return $this->taskColumns;
+    }
+
+    public function addTaskColumn(TaskColumn $taskColumn): self
+    {
+        if (!$this->taskColumns->contains($taskColumn)) {
+            $this->taskColumns[] = $taskColumn;
+            $taskColumn->setSwimlaneId($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTaskColumn(TaskColumn $taskColumn): self
+    {
+        if ($this->taskColumns->removeElement($taskColumn)) {
+            // set the owning side to null (unless already changed)
+            if ($taskColumn->getSwimlaneId() === $this) {
+                $taskColumn->setSwimlaneId(null);
             }
         }
 
